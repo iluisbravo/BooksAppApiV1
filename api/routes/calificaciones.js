@@ -3,6 +3,7 @@ const router = express.Router();
 //const mongoose = require ('mongoose');
 const moment = require('moment')
 const Calificacion = require('../models/calificacion');
+const Pelicula = require('../models/pelicula');
 
 //GET ALL
 router.get("/",(req,res)=>{
@@ -36,29 +37,41 @@ router.get("/:uid",(req,res)=>{
     })
 });
 
-//CREATE
+//CREATE 
 router.post('/',(req,res) => {
     // {    "critico" :"5b3489907049df1cf1b197ff",
     // "estrellas":"5",
     // "comentarios":"Muy buena"}
-
     const {
     idPelicula,
     idCritico,
-    critico,
     estrellas,
     comentarios,
-    fecha} = req.body;
+    } = req.body;
 
-    let newCalificacion = Calificacion({
-        critico,
+    let newCalificacion =  Calificacion({
+        critico : idCritico,
         estrellas,
-        comentarios,
-        fecha
+        comentarios
     })
+
+    console.log(newCalificacion,"NUEVA CALIFICACION")
     newCalificacion.save((error,success) =>{
         if(error) throw error;
-        res.status(201).send(success);
+    
+        Pelicula.findById(idPelicula).exec()
+        .then(pelicula => {
+           
+           pelicula.calificaciones.push(success._id);
+                     
+           return Pelicula.findByIdAndUpdate(idPelicula,pelicula,{new:true}).exec()
+           .then(peliculaUpdated => {
+             res.status(201).send(peliculaUpdated);
+           })
+        })
+        .catch(error => {
+            res.status(404).send(error);
+        })
     })
 });
 
